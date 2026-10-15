@@ -1,0 +1,153 @@
+WEBVTT
+
+1
+00:00:00.250 --> 00:00:03.210
+In this last episode, I'll show how it's
+built.
+
+2
+00:00:05.250 --> 00:00:08.582
+There are six projects, every dependency
+points inward,
+
+3
+00:00:08.582 --> 00:00:12.278
+and the core knows nothing about OpenCV,
+ONNX Runtime or WPF,
+
+4
+00:00:12.278 --> 00:00:15.610
+so most of the tests run without a GPU or
+a video file.
+
+5
+00:00:23.250 --> 00:00:25.639
+I used to keep that rule by review, but
+
+6
+00:00:25.639 --> 00:00:28.273
+now a test checks it for the core
+projects,
+
+7
+00:00:28.273 --> 00:00:30.050
+and CI runs it on every push.
+
+8
+00:00:39.250 --> 00:00:42.130
+Three models, but the app sees one
+interface.
+
+9
+00:00:43.850 --> 00:00:47.052
+When I replaced OpenCV's video writer with
+FFmpeg,
+
+10
+00:00:47.052 --> 00:00:50.191
+I added one adapter and changed one
+registration,
+
+11
+00:00:50.191 --> 00:00:54.930
+and the new writer falls back to the old
+one whenever it can't do the job.
+
+12
+00:00:59.850 --> 00:01:02.810
+Here's an export, with FFmpeg encoding.
+
+13
+00:01:03.850 --> 00:01:07.610
+The UI thread never decodes or blurs,
+while playback,
+
+14
+00:01:07.610 --> 00:01:10.802
+analysis and export each run their own
+tasks,
+
+15
+00:01:10.802 --> 00:01:14.207
+joined by bounded queues with their own
+decoder,
+
+16
+00:01:14.207 --> 00:01:18.250
+and playback never holds more than nine
+frames by design.
+
+17
+00:01:23.850 --> 00:01:27.890
+Right now, only the face detection
+actually runs on the GPU.
+
+18
+00:01:30.850 --> 00:01:35.923
+The GPU only runs where it measured a win,
+like detection at five times the CPU,
+
+19
+00:01:35.923 --> 00:01:39.538
+while the blur on the integrated GPU was
+actually slower,
+
+20
+00:01:39.538 --> 00:01:43.850
+so the next step is keeping frames on the
+GPU from decode to export.
+
+21
+00:01:50.850 --> 00:01:53.192
+Two of my measurements lied. In the first,
+
+22
+00:01:53.192 --> 00:01:57.150
+the same code and clip showed twenty-six
+percent of frames over budget,
+
+23
+00:01:57.150 --> 00:02:01.610
+then under one percent, because the PC was
+busy and a stray process held a core.
+
+24
+00:02:06.850 --> 00:02:09.403
+The second was an average with a cold
+start,
+
+25
+00:02:09.403 --> 00:02:12.595
+where one slow first call made a fast
+lookup look slow,
+
+26
+00:02:12.595 --> 00:02:15.090
+so now I report medians and recent
+windows.
+
+27
+00:02:22.850 --> 00:02:26.650
+These are the patterns, each one next to
+the class that needed it.
+
+28
+00:02:32.850 --> 00:02:35.810
+And these are the numbers I held each
+choice to.
+
+29
+00:02:41.850 --> 00:02:44.533
+The cost is more projects and some
+indirection,
+
+30
+00:02:44.533 --> 00:02:47.330
+and the integration tests only run on my
+machine.
+
+31
+00:02:50.850 --> 00:02:55.170
+Next comes the whole pipeline on the GPU.
+Thanks for following along.
+

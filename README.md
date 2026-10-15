@@ -4,6 +4,8 @@ I built VisionRedact Studio, a Windows desktop app that uses AI to find faces in
 video is shared. This repository holds the series I wrote about building it: what I designed, what went wrong, what I
 measured, and what each fix cost.
 
+**Watch it on the website:** [samit-desai.github.io/visionredact-series](https://samit-desai.github.io/visionredact-series/)
+
 ## What video redaction is for
 
 Before a video is shared, people who never agreed to appear in it often have to be hidden:
