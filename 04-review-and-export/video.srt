@@ -1,0 +1,238 @@
+1
+00:00:00,250 --> 00:00:03,505
+A detected face stays blurred until
+someone rejects it,
+
+2
+00:00:03,505 --> 00:00:06,050
+and approving it changes nothing on
+screen.
+
+3
+00:00:07,350 --> 00:00:09,101
+One rule decides what's hidden,
+
+4
+00:00:09,101 --> 00:00:11,135
+and a single planner turns that into
+
+5
+00:00:11,135 --> 00:00:13,790
+rectangles for both the preview and the
+export.
+
+6
+00:00:19,350 --> 00:00:22,191
+Every face starts as pending, and pending
+is blurred,
+
+7
+00:00:22,191 --> 00:00:26,212
+so approving just records that someone
+checked, only a reject shows a face,
+
+8
+00:00:26,212 --> 00:00:29,590
+and if you forget to review, every face it
+found stays blurred.
+
+9
+00:00:34,350 --> 00:00:38,042
+You can switch between pixelate, a black
+box and blur live,
+
+10
+00:00:38,042 --> 00:00:40,670
+and only the black box removes everything.
+
+11
+00:00:44,950 --> 00:00:48,539
+Blurring a big face region directly took
+sixty-two milliseconds,
+
+12
+00:00:48,539 --> 00:00:52,128
+so instead I shrink it, blur the small
+copy and enlarge it back,
+
+13
+00:00:52,128 --> 00:00:56,390
+which takes one and a half milliseconds
+and looks the same at this strength.
+
+14
+00:01:00,950 --> 00:01:04,630
+Preview and export share every step that
+decides what is hidden.
+
+15
+00:01:09,950 --> 00:01:12,990
+Now, part two, getting it all into a file.
+
+16
+00:01:13,950 --> 00:01:19,110
+If you export before a scan, the app stops
+and explains, and No is the default.
+
+17
+00:01:27,550 --> 00:01:31,141
+It counts which frames were scanned, names
+the stretches that weren't,
+
+18
+00:01:31,141 --> 00:01:34,630
+and rounds down, so it never shows a
+hundred percent it didn't earn.
+
+19
+00:01:42,550 --> 00:01:47,034
+Export works differently from playback,
+because every single frame is decoded,
+
+20
+00:01:47,034 --> 00:01:51,230
+in order, and nothing is ever dropped,
+since the file has to be complete.
+
+21
+00:01:56,550 --> 00:01:58,745
+Here is the 4K60 crowd exporting,
+
+22
+00:01:58,745 --> 00:02:02,670
+and the progress counts frames FFmpeg has
+actually written.
+
+23
+00:02:03,650 --> 00:02:06,903
+My first export ran as one loop at fifty-
+two frames a second,
+
+24
+00:02:06,903 --> 00:02:09,837
+three stages on their own threads reached
+seventy-four,
+
+25
+00:02:09,837 --> 00:02:13,410
+and a faster H.264 encoder took it up to a
+hundred and sixty-seven.
+
+26
+00:02:20,650 --> 00:02:25,350
+That isn't FFmpeg beating OpenCV: OpenCV's
+writer only offered OpenH264,
+
+27
+00:02:25,350 --> 00:02:29,396
+so the app hands its frames to FFmpeg for
+Microsoft's encoder,
+
+28
+00:02:29,396 --> 00:02:31,224
+which also brings the audio,
+
+29
+00:02:31,224 --> 00:02:36,250
+and a twenty-three-minute video now takes
+about nine minutes, not twenty-six.
+
+30
+00:02:36,650 --> 00:02:41,595
+The 4K60 crowd took nineteen seconds for
+eight hundred and ninety-two frames,
+
+31
+00:02:41,595 --> 00:02:43,650
+and the 1080p version just five.
+
+32
+00:02:49,750 --> 00:02:52,692
+An unfinished export never gets the real
+file name,
+
+33
+00:02:52,692 --> 00:02:57,191
+because frames go to a temporary file
+that's renamed only once the frame count
+
+34
+00:02:57,191 --> 00:03:00,710
+matches, though a crash can leave that
+temporary file behind.
+
+35
+00:03:05,750 --> 00:03:07,025
+One bug here was mine,
+
+36
+00:03:07,025 --> 00:03:11,660
+because my first FFmpeg export ran at
+forty-nine frames a second while it waited
+
+37
+00:03:11,660 --> 00:03:15,194
+for FFmpeg to read the whole twenty-three-
+minute audio track,
+
+38
+00:03:15,194 --> 00:03:16,990
+and padding the audio fixed it.
+
+39
+00:03:21,750 --> 00:03:24,684
+At 4K, half of the decode is just
+converting colours,
+
+40
+00:03:24,684 --> 00:03:27,231
+and then the encoder converts them back
+again,
+
+41
+00:03:27,231 --> 00:03:31,550
+so keeping frames on the GPU would avoid
+both, and that's where this is going.
+
+42
+00:03:38,750 --> 00:03:41,750
+And when it's done, it tells you exactly
+what it checked.
+
+43
+00:03:46,850 --> 00:03:50,287
+Each check proves something specific and
+says what it doesn't,
+
+44
+00:03:50,287 --> 00:03:54,610
+so every frame is covered by the face
+scan, but a model can still miss a face.
+
+45
+00:04:04,850 --> 00:04:09,190
+So that's the whole export path, with
+three tasks, two bounded queues,
+
+46
+00:04:09,190 --> 00:04:11,050
+and FFmpeg doing the encoding.
+
+47
+00:04:13,850 --> 00:04:16,609
+The costs are that a model can still miss
+a face,
+
+48
+00:04:16,609 --> 00:04:18,580
+so review and drawn regions are the
+
+49
+00:04:18,580 --> 00:04:21,170
+backstop, and that the encoder uses CPU
+cores.
+
+50
+00:04:31,850 --> 00:04:35,170
+Next, the engineering behind all of it.
+

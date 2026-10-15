@@ -1,0 +1,312 @@
+1
+00:00:00,250 --> 00:00:03,491
+This is a YOLO face model running on my
+laptop's GPU,
+
+2
+00:00:03,491 --> 00:00:05,570
+at about ten milliseconds a frame.
+
+3
+00:00:07,250 --> 00:00:10,825
+The same scan on the CPU takes twenty-
+eight milliseconds a frame,
+
+4
+00:00:10,825 --> 00:00:12,090
+and the queue fills up.
+
+5
+00:00:14,350 --> 00:00:18,882
+Three models looked at the same frame and
+reported twenty-two, two and six faces,
+
+6
+00:00:18,882 --> 00:00:23,190
+and since there's no ground truth here,
+more boxes doesn't mean more correct.
+
+7
+00:00:26,450 --> 00:00:30,873
+Everything runs on the PC, with a model
+file from Hugging Face,
+
+8
+00:00:30,873 --> 00:00:35,155
+ONNX Runtime inside the C# app, and the
+GPU through DirectML,
+
+9
+00:00:35,155 --> 00:00:37,050
+with the CPU as a fallback.
+
+10
+00:00:39,450 --> 00:00:44,409
+Each 4K frame is shrunk to six-forty by
+six-forty without stretching the faces,
+
+11
+00:00:44,409 --> 00:00:49,619
+then from the thousands of candidates the
+model returns, I keep the confident ones,
+
+12
+00:00:49,619 --> 00:00:53,950
+map them back onto the 4K frame, and drop
+the overlapping duplicates.
+
+13
+00:00:57,450 --> 00:01:00,956
+On a 1080p frame that's twenty-three
+milliseconds
+
+14
+00:01:00,956 --> 00:01:03,245
+on the CPU and under five on the
+
+15
+00:01:03,245 --> 00:01:06,250
+RTX, but at 4K, the decoder sets the pace.
+
+16
+00:01:09,450 --> 00:01:13,244
+One bug never shipped. This YOLO26 model
+was exported without NMS,
+
+17
+00:01:13,244 --> 00:01:17,959
+so my classic decoder would have read its
+corners as centres and drawn wrong boxes
+
+18
+00:01:17,959 --> 00:01:18,763
+with no error,
+
+19
+00:01:18,763 --> 00:01:23,305
+which is why each model family now has a
+profile that checks the output when it
+
+20
+00:01:23,305 --> 00:01:23,650
+loads.
+
+21
+00:01:27,450 --> 00:01:28,994
+The rest of the app only sees
+
+22
+00:01:28,994 --> 00:01:31,709
+one interface, because I'm not grading
+models here,
+
+23
+00:01:31,709 --> 00:01:35,010
+I'm building the app so that a better
+model can plug in later.
+
+24
+00:01:45,450 --> 00:01:48,283
+I scan five frames a second rather than
+all sixty,
+
+25
+00:01:48,283 --> 00:01:50,210
+skip the frames in between without
+
+26
+00:01:50,210 --> 00:01:52,873
+converting their pixels, and reuse the
+buffers,
+
+27
+00:01:52,873 --> 00:01:54,970
+so the garbage collector stays quiet.
+
+28
+00:02:00,450 --> 00:02:04,530
+So that's the whole path, from the decoder
+through to the stored boxes.
+
+29
+00:02:09,450 --> 00:02:12,450
+And the boxes are blurred live while the
+video plays.
+
+30
+00:02:14,450 --> 00:02:17,650
+Now, part two, turning detections into
+people.
+
+31
+00:02:18,450 --> 00:02:22,130
+Each face keeps its track number from one
+scan to the next.
+
+32
+00:02:23,950 --> 00:02:27,402
+Detections become tracks, and tracks can
+become people,
+
+33
+00:02:27,402 --> 00:02:31,230
+with the tracker linking each face from
+one scan to the next.
+
+34
+00:02:35,950 --> 00:02:40,389
+Between scans, holding each box still let
+a moving face walk right out of it,
+
+35
+00:02:40,389 --> 00:02:42,580
+so now the box slides along its track,
+
+36
+00:02:42,580 --> 00:02:44,771
+and the share of boxes more than eight
+
+37
+00:02:44,771 --> 00:02:47,308
+pixels off the face fell from about
+eighteen
+
+38
+00:02:47,308 --> 00:02:48,230
+percent to four.
+
+39
+00:02:53,950 --> 00:02:58,371
+Small, fast faces kept breaking tracks,
+because every scan started a new one,
+
+40
+00:02:58,371 --> 00:03:00,380
+until a distance fallback fixed it,
+
+41
+00:03:00,380 --> 00:03:02,504
+taking one minute of footage from two
+
+42
+00:03:02,504 --> 00:03:05,030
+hundred and sixty-two tracks down to
+eighty.
+
+43
+00:03:09,950 --> 00:03:12,452
+Track numbers never repeat, even after a
+re-scan,
+
+44
+00:03:12,452 --> 00:03:16,690
+because otherwise a new face could inherit
+the number of a face someone had already
+
+45
+00:03:16,690 --> 00:03:17,150
+approved.
+
+46
+00:03:24,950 --> 00:03:29,150
+Grouping faces into people is opt-in, and
+it runs entirely on the device.
+
+47
+00:03:34,050 --> 00:03:37,501
+It takes three sharp shots per track,
+aligns them on five landmarks,
+
+48
+00:03:37,501 --> 00:03:40,141
+and turns each into five hundred and
+twelve numbers,
+
+49
+00:03:40,141 --> 00:03:42,323
+so close numbers become a suggested
+person,
+
+50
+00:03:42,323 --> 00:03:46,130
+though the app never groups two tracks
+from the same frame into one person.
+
+51
+00:03:52,050 --> 00:03:55,007
+I rename Thom, the person on screen, and
+then Celia,
+
+52
+00:03:55,007 --> 00:03:57,794
+and both names carry over to all of their
+tracks,
+
+53
+00:03:57,794 --> 00:04:00,410
+even in a scene from much earlier in the
+film.
+
+54
+00:04:03,650 --> 00:04:07,029
+Grouping can miss a track, like this one
+of Thom in profile,
+
+55
+00:04:07,029 --> 00:04:09,788
+so I pick his name under Merge into, click
+Merge,
+
+56
+00:04:09,788 --> 00:04:12,210
+and the label on the video changes to
+Thom.
+
+57
+00:04:17,950 --> 00:04:23,403
+And every edit can be undone, because each
+one makes a new immutable snapshot,
+
+58
+00:04:23,403 --> 00:04:25,430
+so undo simply goes back one.
+
+59
+00:04:29,950 --> 00:04:33,046
+And if the AI missed someone, I draw a
+box,
+
+60
+00:04:33,046 --> 00:04:36,070
+and OpenCV's tracker follows them forward.
+
+61
+00:04:40,050 --> 00:04:43,210
+That's the whole path, from a track to a
+person.
+
+62
+00:04:49,050 --> 00:04:52,358
+The costs are that DirectML is in
+maintenance mode,
+
+63
+00:04:52,358 --> 00:04:55,602
+the YOLO models come with Ultralytics'
+AGPL terms,
+
+64
+00:04:55,602 --> 00:04:58,586
+the face-embedding model is for research
+only,
+
+65
+00:04:58,586 --> 00:05:01,570
+and the tracker can swap two faces that
+cross.
+
+66
+00:05:07,050 --> 00:05:11,250
+Next comes fail-safe review, and a
+parallel 4K export pipeline.
+
