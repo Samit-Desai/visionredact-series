@@ -35,6 +35,17 @@
     });
   }, true);
 
+  // The way back to the episode list shows up once the list has scrolled out of view.
+  var list = document.querySelector(".toc");
+  var back = document.querySelector(".to-list");
+  if (list && back) {
+    var toggle = function () {
+      back.classList.toggle("show", list.getBoundingClientRect().bottom < 0);
+    };
+    window.addEventListener("scroll", toggle, { passive: true });
+    toggle();
+  }
+
   document.querySelectorAll(".carousel").forEach(function (carousel) {
     var track = carousel.querySelector(".track");
     var slides = track.querySelectorAll("img");
