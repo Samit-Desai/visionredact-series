@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisionRedact Studio: building a 4K video redaction app in C#</title>
+<meta name="description" content="A Windows desktop app that uses AI to find faces in video and blurs them before the video is shared. A trailer and five episodes: what I designed, what went wrong, what I measured, and what each fix cost.">
+<meta name="author" content="Samit Desai">
+<meta name="theme-color" content="#0b1220">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VisionRedact Studio: building a 4K video redaction app in C#">
+<meta property="og:description" content="A Windows desktop app that uses AI to find faces in video and blurs them before the video is shared. A trailer and five episodes: what I designed, what went wrong, what I measured, and what each fix cost.">
+<meta property="og:url" content="https://samit-desai.github.io/visionredact-series/">
+<meta property="og:image" content="https://samit-desai.github.io/visionredact-series/site/img/00-trailer.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="site/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="site/site.css?v=3e328764">
+</head>
+<body>
+<header class="wrap top">
+  <a class="brand" href="https://samit-desai.github.io/"><span class="dot"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg></span><span>Samit Desai<small>VisionRedact Studio series</small></span></a>
+  <nav aria-label="Links"><a href="https://samit-desai.github.io/"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6 2.6 12 4l-4 4 4 4-1.4 1.4L5.2 8z"/></svg>All projects</a><a href="#episodes">Episodes</a><a href="https://github.com/Samit-Desai/VisionRedact">Code</a><a href="https://github.com/Samit-Desai/visionredact-series">Series on GitHub</a><a href="https://www.linkedin.com/in/samit-desai-62868420">LinkedIn</a></nav>
+</header>
+<main>
+<section class="wrap hero">
+  <p class="kicker">A series in C# · trailer + 5 episodes</p>
+  <h1>VisionRedact <em>Studio</em></h1>
+  <p class="lead">I built a Windows desktop app that uses AI to find faces in video and blurs them before the video is
+  shared. This series covers what I designed, what went wrong, what I measured, and what each fix cost.</p>
+  <div class="player" data-src="00-trailer/trailer.mp4" data-vtt="00-trailer/trailer.vtt"><img src="site/img/00-trailer.jpg" alt="Trailer cover: I built a 4K video redaction app in C#" width="1280" height="720" fetchpriority="high"><button class="play" type="button" aria-label="Watch the trailer · 1:18, with subtitles"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>Watch the trailer · 1:18</span></button></div>
+  <div class="under"><span>The whole workflow in 78 seconds, with subtitles. Sound on.</span>
+    <a href="https://www.linkedin.com/posts/samit-desai-62868420_dotnet-csharp-wpf-ugcPost-7515316113132679168-qYOi/">Trailer on LinkedIn <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2h8v8h-2V5.4L4.7 12.7 3.3 11.3 10.6 4H6z"/></svg></a></div>
+</section>
+
+<section class="wrap why">
+  <h2>What video redaction is for</h2>
+  <p>Before a video is shared, people who never agreed to appear in it often have to be hidden:</p>
+  <ul class="uses">
+    <li><b>Courts and legal cases</b>Evidence shared with the other side or shown in public.</li>
+    <li><b>Police and body cameras</b>Footage released to the public.</li>
+    <li><b>CCTV and security</b>When footage is handed over, for example to someone who asked for footage of themselves, other people who can be identified often need to be hidden, depending on the circumstances.</li>
+    <li><b>Schools, hospitals and workplaces</b>Recordings of children, patients or staff.</li>
+    <li><b>News and research</b>Bystanders who never agreed to appear.</li>
+  </ul>
+  <p>By hand, that means drawing over every face in every frame, and my 23-minute test recording (59.94 fps) has
+  82,373 frames. In VisionRedact, the AI finds the faces on the laptop's GPU, without uploading anything, and a person
+  checks them. Every face it finds stays blurred until someone rejects it.</p>
+</section>
+
+<section class="wrap" id="episodes">
+  <h2>The episodes</h2>
+  <p class="lead">Each one has an article with the measurements, a narrated video and a carousel.</p>
+  <ol class="toc">
+    <li><a href="#episode-1"><b>1</b>Smooth 4K60 video in WPF</a></li>
+    <li><a href="#episode-2"><b>2</b>YouTube-style timeline previews in WPF</a></li>
+    <li><a href="#episode-3"><b>3</b>Local AI on the GPU in C#</a></li>
+    <li><a href="#episode-4"><b>4</b>Redaction you can trust</a></li>
+    <li><a href="#episode-5"><b>5</b>The engineering behind VisionRedact</a></li>
+  </ol>
+  <div class="episodes">
+  <article class="card" id="episode-1">
+    <p class="label">Episode 1 of 5</p>
+    <h3>Smooth 4K60 video in WPF</h3>
+    <p class="hook">A 15-second 4K video took almost 27 seconds to play. The surprising fix? Doing less work and using fewer threads.</p>
+    <p class="line">From 7 FPS to 60, measured step by step.</p>
+    <div class="media">
+      <div>
+      <div class="player" data-src="01-smooth-4k60/video.mp4" data-vtt="01-smooth-4k60/video.vtt"><img src="site/img/01-smooth-4k60.jpg" alt="Episode 1: Smooth 4K60 video in WPF" width="1280" height="720" loading="lazy"><button class="play" type="button" aria-label="Play Episode 1 · 2:16, with subtitles"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>Play Episode 1 · 2:16</span></button></div>
+      <p class="meta">Narrated video, 2:16, with subtitles. Sound on.</p>
+      </div>
+      <div class="carousel" role="region" aria-label="Episode 1 carousel">
+        <div class="track" tabindex="0">
+        <img src="01-smooth-4k60/visuals/slide_1.png" alt="Episode 1 carousel, slide 1 of 8" width="1080" height="1350" loading="lazy">
+        <img src="01-smooth-4k60/visuals/slide_2.png" alt="Episode 1 carousel, slide 2 of 8" width="1080" height="1350" loading="lazy">
+        <img src="01-smooth-4k60/visuals/slide_3.png" alt="Episode 1 carousel, slide 3 of 8" width="1080" height="1350" loading="lazy">
+        <img src="01-smooth-4k60/visuals/slide_4.png" alt="Episode 1 carousel, slide 4 of 8" width="1080" height="1350" loading="lazy">
+        <img src="01-smooth-4k60/visuals/slide_5.png" alt="Episode 1 carousel, slide 5 of 8" width="1080" height="1350" loading="lazy">
+        <img src="01-smooth-4k60/visuals/slide_6.png" alt="Episode 1 carousel, slide 6 of 8" width="1080" height="1350" loading="lazy">
+        <img src="01-smooth-4k60/visuals/slide_7.png" alt="Episode 1 carousel, slide 7 of 8" width="1080" height="1350" loading="lazy">
+        <img src="01-smooth-4k60/visuals/slide_8.png" alt="Episode 1 carousel, slide 8 of 8" width="1080" height="1350" loading="lazy">
+        </div>
+        <div class="nav"><button class="prev" type="button" aria-label="Previous slide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6 2.6 12 4l-4 4 4 4-1.4 1.4L5.2 8z"/></svg></button>
+          <span class="count" aria-live="polite">1 / 8</span>
+          <button class="next" type="button" aria-label="Next slide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.4 2.6 4 4l4 4-4 4 1.4 1.4L10.8 8z"/></svg></button></div>
+      </div>
+    </div>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/Samit-Desai/visionredact-series/blob/main/01-smooth-4k60/README.md">Read the article</a>
+      <a class="btn" href="https://www.linkedin.com/posts/samit-desai-62868420_dotnet-csharp-wpf-ugcPost-7515314469829300224-Np4J/">LinkedIn post <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2h8v8h-2V5.4L4.7 12.7 3.3 11.3 10.6 4H6z"/></svg></a>
+      <a class="btn" href="01-smooth-4k60/carousel.pdf">Carousel (PDF)</a>
+    </div>
+  </article>
+  <article class="card" id="episode-2">
+    <p class="label">Episode 2 of 5</p>
+    <h3>YouTube-style timeline previews in WPF</h3>
+    <p class="hook">What if YouTube took half a second to show every thumbnail? Here&#x27;s how I made video previews feel instant.</p>
+    <p class="line">Half-second seeks, microsecond lookups: a thumbnail, then the exact frame.</p>
+    <div class="media">
+      <div>
+      <div class="player" data-src="02-timeline-previews/video.mp4" data-vtt="02-timeline-previews/video.vtt"><img src="site/img/02-timeline-previews.jpg" alt="Episode 2: YouTube-style timeline previews in WPF" width="1280" height="720" loading="lazy"><button class="play" type="button" aria-label="Play Episode 2 · 2:03, with subtitles"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>Play Episode 2 · 2:03</span></button></div>
+      <p class="meta">Narrated video, 2:03, with subtitles. Sound on.</p>
+      </div>
+      <div class="carousel" role="region" aria-label="Episode 2 carousel">
+        <div class="track" tabindex="0">
+        <img src="02-timeline-previews/visuals/slide_1.png" alt="Episode 2 carousel, slide 1 of 8" width="1080" height="1350" loading="lazy">
+        <img src="02-timeline-previews/visuals/slide_2.png" alt="Episode 2 carousel, slide 2 of 8" width="1080" height="1350" loading="lazy">
+        <img src="02-timeline-previews/visuals/slide_3.png" alt="Episode 2 carousel, slide 3 of 8" width="1080" height="1350" loading="lazy">
+        <img src="02-timeline-previews/visuals/slide_4.png" alt="Episode 2 carousel, slide 4 of 8" width="1080" height="1350" loading="lazy">
+        <img src="02-timeline-previews/visuals/slide_5.png" alt="Episode 2 carousel, slide 5 of 8" width="1080" height="1350" loading="lazy">
+        <img src="02-timeline-previews/visuals/slide_6.png" alt="Episode 2 carousel, slide 6 of 8" width="1080" height="1350" loading="lazy">
+        <img src="02-timeline-previews/visuals/slide_7.png" alt="Episode 2 carousel, slide 7 of 8" width="1080" height="1350" loading="lazy">
+        <img src="02-timeline-previews/visuals/slide_8.png" alt="Episode 2 carousel, slide 8 of 8" width="1080" height="1350" loading="lazy">
+        </div>
+        <div class="nav"><button class="prev" type="button" aria-label="Previous slide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6 2.6 12 4l-4 4 4 4-1.4 1.4L5.2 8z"/></svg></button>
+          <span class="count" aria-live="polite">1 / 8</span>
+          <button class="next" type="button" aria-label="Next slide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.4 2.6 4 4l4 4-4 4 1.4 1.4L10.8 8z"/></svg></button></div>
+      </div>
+    </div>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/Samit-Desai/visionredact-series/blob/main/02-timeline-previews/README.md">Read the article</a>
+      <a class="btn" href="https://www.linkedin.com/posts/samit-desai-62868420_dotnet-csharp-wpf-ugcPost-7515316642072166401-wCgP/">LinkedIn post <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2h8v8h-2V5.4L4.7 12.7 3.3 11.3 10.6 4H6z"/></svg></a>
+      <a class="btn" href="02-timeline-previews/carousel.pdf">Carousel (PDF)</a>
+    </div>
+  </article>
+  <article class="card" id="episode-3">
+    <p class="label">Episode 3 of 5</p>
+    <h3>Local AI on the GPU in C#</h3>
+    <p class="hook">A large face model needs about 75 ms to look at one frame. A 60 fps video shows a new frame every 17 ms. Here&#x27;s how I made it work anyway, on a laptop.</p>
+    <p class="line">Hugging Face YOLO with ONNX Runtime and DirectML, from faces to tracks to people.</p>
+    <div class="media">
+      <div>
+      <div class="player" data-src="03-local-ai-gpu/video.mp4" data-vtt="03-local-ai-gpu/video.vtt"><img src="site/img/03-local-ai-gpu.jpg" alt="Episode 3: Local AI on the GPU in C#" width="1280" height="720" loading="lazy"><button class="play" type="button" aria-label="Play Episode 3 · 4:59, with subtitles"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>Play Episode 3 · 4:59</span></button></div>
+      <p class="meta">Narrated video, 4:59, with subtitles. Sound on.</p>
+      </div>
+      <div class="carousel" role="region" aria-label="Episode 3 carousel">
+        <div class="track" tabindex="0">
+        <img src="03-local-ai-gpu/visuals/slide_1.png" alt="Episode 3 carousel, slide 1 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_2.png" alt="Episode 3 carousel, slide 2 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_3.png" alt="Episode 3 carousel, slide 3 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_4.png" alt="Episode 3 carousel, slide 4 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_5.png" alt="Episode 3 carousel, slide 5 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_6.png" alt="Episode 3 carousel, slide 6 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_7.png" alt="Episode 3 carousel, slide 7 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_8.png" alt="Episode 3 carousel, slide 8 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_9.png" alt="Episode 3 carousel, slide 9 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_10.png" alt="Episode 3 carousel, slide 10 of 11" width="1080" height="1350" loading="lazy">
+        <img src="03-local-ai-gpu/visuals/slide_11.png" alt="Episode 3 carousel, slide 11 of 11" width="1080" height="1350" loading="lazy">
+        </div>
+        <div class="nav"><button class="prev" type="button" aria-label="Previous slide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6 2.6 12 4l-4 4 4 4-1.4 1.4L5.2 8z"/></svg></button>
+          <span class="count" aria-live="polite">1 / 11</span>
+          <button class="next" type="button" aria-label="Next slide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.4 2.6 4 4l4 4-4 4 1.4 1.4L10.8 8z"/></svg></button></div>
+      </div>
+    </div>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/Samit-Desai/visionredact-series/blob/main/03-local-ai-gpu/README.md">Read the article</a>
+      <a class="btn" href="https://www.linkedin.com/posts/samit-desai-62868420_dotnet-csharp-wpf-ugcPost-7517481690559049728-709c/">LinkedIn post <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2h8v8h-2V5.4L4.7 12.7 3.3 11.3 10.6 4H6z"/></svg></a>
+      <a class="btn" href="03-local-ai-gpu/carousel.pdf">Carousel (PDF)</a>
+    </div>
+  </article>
+  <article class="card" id="episode-4">
+    <p class="label">Episode 4 of 5</p>
+    <h3>Redaction you can trust</h3>
+    <p class="hook">My app scans 5 frames a second to stay fast. A man&#x27;s face slipped out between two heads for a sixth of a second, right between two scans. No box. No blur.</p>
+    <p class="line">Fail-safe review, and a parallel 4K export pipeline with FFmpeg.</p>
+    <div class="media">
+      <div>
+      <div class="player" data-src="04-review-and-export/video.mp4" data-vtt="04-review-and-export/video.vtt"><img src="site/img/04-review-and-export.jpg" alt="Episode 4: Redaction you can trust" width="1280" height="720" loading="lazy"><button class="play" type="button" aria-label="Play Episode 4 · 4:52, with subtitles"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>Play Episode 4 · 4:52</span></button></div>
+      <p class="meta">Narrated video, 4:52, with subtitles. Sound on.</p>
+      </div>
+      <div class="carousel" role="region" aria-label="Episode 4 carousel">
+        <div class="track" tabindex="0">
+        <img src="04-review-and-export/visuals/slide_1.png" alt="Episode 4 carousel, slide 1 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_2.png" alt="Episode 4 carousel, slide 2 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_3.png" alt="Episode 4 carousel, slide 3 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_4.png" alt="Episode 4 carousel, slide 4 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_5.png" alt="Episode 4 carousel, slide 5 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_6.png" alt="Episode 4 carousel, slide 6 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_7.png" alt="Episode 4 carousel, slide 7 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_8.png" alt="Episode 4 carousel, slide 8 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_9.png" alt="Episode 4 carousel, slide 9 of 10" width="1080" height="1350" loading="lazy">
+        <img src="04-review-and-export/visuals/slide_10.png" alt="Episode 4 carousel, slide 10 of 10" width="1080" height="1350" loading="lazy">
+        </div>
+        <div class="nav"><button class="prev" type="button" aria-label="Previous slide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6 2.6 12 4l-4 4 4 4-1.4 1.4L5.2 8z"/></svg></button>
+          <span class="count" aria-live="polite">1 / 10</span>
+          <button class="next" type="button" aria-label="Next slide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.4 2.6 4 4l4 4-4 4 1.4 1.4L10.8 8z"/></svg></button></div>
+      </div>
+    </div>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/Samit-Desai/visionredact-series/blob/main/04-review-and-export/README.md">Read the article</a>
+      <a class="btn" href="https://www.linkedin.com/posts/samit-desai-62868420_dotnet-csharp-wpf-ugcPost-7518845013720760320-QwOE/">LinkedIn post <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2h8v8h-2V5.4L4.7 12.7 3.3 11.3 10.6 4H6z"/></svg></a>
+      <a class="btn" href="04-review-and-export/carousel.pdf">Carousel (PDF)</a>
+    </div>
+  </article>
+  <article class="card" id="episode-5">
+    <p class="label">Episode 5 of 5</p>
+    <h3>The engineering behind VisionRedact</h3>
+    <p class="hook">Architecture tour, 7 min: one UI thread, three pipelines, and the design patterns that solve its real problems.</p>
+    <p class="line">System design, threads, and design patterns, each with the problem it solves.</p>
+    <div class="media solo">
+      <div>
+      <div class="player" data-src="05-engineering/video.mp4" data-vtt="05-engineering/video.vtt"><img src="site/img/05-engineering.jpg" alt="Episode 5: The engineering behind VisionRedact" width="1280" height="720" loading="lazy"><button class="play" type="button" aria-label="Play Episode 5 · 7:09, with subtitles"><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>Play Episode 5 · 7:09</span></button></div>
+      <p class="meta">Narrated video, 7:09, with subtitles. Sound on.</p>
+      </div>
+    </div>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/Samit-Desai/visionredact-series/blob/main/05-engineering/README.md">Read the article</a>
+      
+      
+    </div>
+  </article>
+  </div>
+</section>
+
+<section class="wrap cols">
+  <div>
+    <h2>Built with</h2>
+    <ul class="chips"><li>C#</li><li>.NET 10</li><li>WPF</li><li>Prism</li><li>OpenCV (Emgu CV)</li><li>ONNX Runtime</li><li>DirectML</li><li>YOLO face models from Hugging Face</li><li>FFmpeg</li></ul>
+  </div>
+  <div>
+    <h2>How I measured</h2>
+    <p>The numbers come from my development laptop (Intel Core Ultra 9 185H, RTX 3500 Ada laptop GPU). They are read
+    from the app's own Diagnostics counters, or timed by a benchmark harness that runs the app's own classes. Each
+    article says how it measured and under what conditions. The raw results are in
+    <a href="https://github.com/Samit-Desai/visionredact-series/blob/main/measurements/README.md">measurements</a>.</p>
+  </div>
+  <div>
+    <h2>The code</h2>
+    <p>The app's source code is public on <a href="https://github.com/Samit-Desai/VisionRedact">GitHub</a>. File and class names in
+    the articles refer to that code.</p>
+  </div>
+  <div>
+    <h2>Notes</h2>
+    <ul>
+      <li>I built the app with an AI coding assistant as my pair programmer. The design, the measurements and the
+      mistakes are mine.</li>
+      <li>The video narration is an AI voice made from my own voice.</li>
+    </ul>
+  </div>
+</section>
+</main>
+<a class="to-list" href="#episodes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 10.6 4 12l4-4 4 4 1.4-1.4L8 5.2z"/></svg>All episodes</a>
+<footer class="wrap">
+  <p>Footage: Talha Uguz, Towfiqu barbhuiya, William Fortunato / Pexels. <i>Tears of Steel</i> (CC) Blender Foundation | mango.blender.org, licensed <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>, shown in the app with faces blurred where redaction is on.</p>
+  <p>© 2026 Samit Desai. The articles, diagrams and videos are mine. The footage keeps its own license.</p>
+  <nav aria-label="Links in the footer"><a href="https://samit-desai.github.io/"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6 2.6 12 4l-4 4 4 4-1.4 1.4L5.2 8z"/></svg>All projects</a><a href="#episodes">Episodes</a><a href="https://github.com/Samit-Desai/VisionRedact">Code</a><a href="https://github.com/Samit-Desai/visionredact-series">Series on GitHub</a><a href="https://www.linkedin.com/in/samit-desai-62868420">LinkedIn</a></nav>
+</footer>
+<script src="site/site.js?v=35000911"></script>
+</body>
+</html>

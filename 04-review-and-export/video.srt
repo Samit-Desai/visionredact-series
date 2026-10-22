@@ -1,0 +1,364 @@
+1
+00:00:00,150 --> 00:00:04,870
+In episode three, an AI model on my
+laptop's GPU found the faces in a video,
+
+2
+00:00:04,870 --> 00:00:07,230
+without a single frame leaving the PC.
+
+3
+00:00:07,410 --> 00:00:12,048
+To stay fast, it scans five frames a
+second, a tracker slides each box along
+
+4
+00:00:12,048 --> 00:00:15,770
+between the scans, and the app
+groups the tracks into people.
+
+5
+00:00:15,950 --> 00:00:19,150
+But between two scans, the
+AI isn't looking at all.
+
+6
+00:00:19,330 --> 00:00:22,050
+So what happens to a face
+that only shows up there?
+
+7
+00:00:22,760 --> 00:00:27,677
+You choose how often the AI looks, right
+in this list: every frame, every second
+
+8
+00:00:27,677 --> 00:00:30,320
+frame, or ten, five or
+two frames a second.
+
+9
+00:00:30,500 --> 00:00:32,980
+It's a trade-off between time and safety.
+
+10
+00:00:33,160 --> 00:00:37,788
+When little moves, like a podcast, a
+meeting room or a make-up tutorial, a few
+
+11
+00:00:37,788 --> 00:00:42,120
+scans a second are usually enough,
+because the faces stay where they are.
+
+12
+00:00:42,300 --> 00:00:46,825
+A busy street needs more, and footage
+where nothing may slip through can use
+
+13
+00:00:46,825 --> 00:00:47,540
+every frame.
+
+14
+00:00:47,720 --> 00:00:51,280
+Five a second is the default,
+and that leaves gaps.
+
+15
+00:00:52,020 --> 00:00:55,540
+Here's what a gap means, on the
+same street from episode three.
+
+16
+00:00:55,720 --> 00:00:59,987
+The scan looks at frame two hundred and
+seventeen, then at frame two hundred and
+
+17
+00:00:59,987 --> 00:01:00,680
+twenty-three.
+
+18
+00:01:00,860 --> 00:01:05,000
+In between, this man's face comes back
+between two heads for five frames, a
+
+19
+00:01:05,000 --> 00:01:07,540
+sixth of a second, and
+then it's hidden again.
+
+20
+00:01:07,720 --> 00:01:13,133
+No scan lands on those frames, so there's
+no box, and nothing blurs it, not even
+
+21
+00:01:13,133 --> 00:01:14,080
+in the export.
+
+22
+00:01:14,260 --> 00:01:18,702
+A viewer asked about exactly this on my
+last post: can a reviewer step through
+
+23
+00:01:18,702 --> 00:01:22,460
+those gaps and add a blur, without
+scanning the whole video again?
+
+24
+00:01:23,240 --> 00:01:27,333
+Yes. I step through frame by frame
+with the arrow keys, and when his face
+
+25
+00:01:27,333 --> 00:01:30,360
+appears, I draw a box around
+his head and press Track.
+
+26
+00:01:30,540 --> 00:01:35,334
+OpenCV's KCF tracker follows it forward,
+frame by frame, and when his face goes
+
+27
+00:01:35,334 --> 00:01:39,460
+behind the next head, it loses him,
+and the region ends right there.
+
+28
+00:01:39,640 --> 00:01:42,600
+Now he's blurred on every
+frame where he shows.
+
+29
+00:01:42,780 --> 00:01:46,780
+I could also press D, and the
+model runs on just this one frame.
+
+30
+00:01:46,960 --> 00:01:51,958
+Or I set that list to every frame and
+scan again: it takes longer, but now the
+
+31
+00:01:51,958 --> 00:01:53,560
+AI looks at his face too.
+
+32
+00:01:54,380 --> 00:01:56,300
+So there are two separate cases.
+
+33
+00:01:56,480 --> 00:02:00,860
+A face the AI found starts as pending,
+and pending is blurred: approving it only
+
+34
+00:02:00,860 --> 00:02:05,240
+records that someone checked it, and only
+a reject shows it, like this one face.
+
+35
+00:02:05,420 --> 00:02:10,100
+So even an unfinished review still
+hides every face the AI found.
+
+36
+00:02:10,280 --> 00:02:15,240
+A face the AI never found has no
+box, so a person has to draw it.
+
+37
+00:02:15,420 --> 00:02:20,004
+The export doesn't run the AI again: it
+blurs the same boxes and regions you see
+
+38
+00:02:20,004 --> 00:02:21,780
+in the preview, on every frame.
+
+39
+00:02:22,570 --> 00:02:26,530
+The export writes a new video, frame
+by frame, and at first it was slow.
+
+40
+00:02:26,710 --> 00:02:31,352
+The blur alone took about four fifths of
+every frame, so now it shrinks the face
+
+41
+00:02:31,352 --> 00:02:35,704
+region, blurs the small copy and enlarges
+it back, which is forty-one times
+
+42
+00:02:35,704 --> 00:02:36,110
+faster.
+
+43
+00:02:36,290 --> 00:02:40,645
+Then reading, blurring and writing ran
+one after another for every frame, so I
+
+44
+00:02:40,645 --> 00:02:44,945
+made them three stages that work at the
+same time, which took the export from
+
+45
+00:02:44,945 --> 00:02:47,290
+fifty-two to seventy-four frames a second.
+
+46
+00:02:47,470 --> 00:02:52,508
+Now writing was the limit: OpenCV's
+writer, the way the app used it, only
+
+47
+00:02:52,508 --> 00:02:57,270
+offered one H.264 encoder, OpenH264,
+and it can't write audio at all.
+
+48
+00:02:57,450 --> 00:03:02,988
+That's why the app now streams its frames
+into FFmpeg, which uses Microsoft's
+
+49
+00:03:02,988 --> 00:03:04,570
+H.264 encoder instead.
+
+50
+00:03:04,750 --> 00:03:09,514
+In my tests, OpenH264 used about one
+of the CPU's cores, while Microsoft's
+
+51
+00:03:09,514 --> 00:03:14,471
+encoder spreads the work over several,
+and the export reached up to a hundred
+
+52
+00:03:14,471 --> 00:03:17,110
+and sixty-seven frames a second at 1080p.
+
+53
+00:03:17,290 --> 00:03:21,354
+FFmpeg also brings the sound: it reads
+the soundtrack straight from the original
+
+54
+00:03:21,354 --> 00:03:25,216
+file while the frames come in, lines it
+up with the first frame, and ends it
+
+55
+00:03:25,216 --> 00:03:26,130
+with the last one.
+
+56
+00:03:26,310 --> 00:03:30,516
+That ending matters: in a short test
+without it, FFmpeg kept going through the
+
+57
+00:03:30,516 --> 00:03:34,453
+whole twenty-three-minute soundtrack
+after the last frame, and the export
+
+58
+00:03:34,453 --> 00:03:38,390
+measured forty-nine frames a second
+instead of a hundred and sixty-seven.
+
+59
+00:03:38,570 --> 00:03:43,837
+This 4K60 crowd clip, eight hundred and
+ninety-two frames, now exports in about
+
+60
+00:03:43,837 --> 00:03:44,970
+nineteen seconds.
+
+61
+00:03:45,800 --> 00:03:50,408
+The real limit now is that the work
+is split: the AI runs on the GPU, but
+
+62
+00:03:50,408 --> 00:03:53,880
+reading, blurring and writing
+the video run on the CPU.
+
+63
+00:03:54,060 --> 00:03:58,236
+A 4K frame is about twenty-five megabytes,
+and it's converted from the video's
+
+64
+00:03:58,236 --> 00:04:02,358
+colours to RGB on the way in and back
+again on the way out, so at 4K, half of
+
+65
+00:04:02,358 --> 00:04:04,500
+reading a frame is just that conversion.
+
+66
+00:04:04,680 --> 00:04:08,900
+When I tried reading the video on the
+GPU through OpenCV, it got slower,
+
+67
+00:04:08,900 --> 00:04:12,240
+probably because every frame
+had to come back to the CPU.
+
+68
+00:04:12,420 --> 00:04:17,102
+So the next big step is to keep each
+frame on the GPU from start to finish:
+
+69
+00:04:17,102 --> 00:04:20,660
+faster, but more complex, and
+that's a series of its own.
+
+70
+00:04:20,840 --> 00:04:25,105
+For review, the same viewer suggested
+the next step too: show on the timeline
+
+71
+00:04:25,105 --> 00:04:29,425
+what the model scanned and what a person
+has reviewed, rescan just one stretch
+
+72
+00:04:29,425 --> 00:04:33,080
+at every frame, and keep it unreviewed
+until a person confirms it.
+
+73
+00:04:33,260 --> 00:04:38,380
+That isn't built yet, and today the
+reviewer has to find those gaps.
+
+74
+00:04:39,140 --> 00:04:43,240
+In short, the AI proposes, a person
+fills the gaps, and the export writes
+
+75
+00:04:43,240 --> 00:04:44,700
+exactly what was reviewed.
+
+76
+00:04:44,880 --> 00:04:48,680
+Next, in episode five, the
+engineering behind all of it.
+

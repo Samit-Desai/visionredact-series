@@ -1,0 +1,389 @@
+WEBVTT
+
+1
+00:00:00.150 --> 00:00:04.927
+Every face in this 4K street was found
+by an AI model running on my laptop's
+
+2
+00:00:04.927 --> 00:00:08.510
+GPU, inside a C# app, and not
+a single frame left the PC.
+
+3
+00:00:08.690 --> 00:00:13.083
+Let me show you how I plugged that AI
+in, how I made it fast, and how the app
+
+4
+00:00:13.083 --> 00:00:15.650
+learns which faces belong
+to the same person.
+
+5
+00:00:16.390 --> 00:00:20.150
+The first choice is the model, and
+there's no single right answer.
+
+6
+00:00:20.330 --> 00:00:25.556
+On this frame, a small model, UltraFace,
+finds two faces, a balanced one, YOLO11
+
+7
+00:00:25.556 --> 00:00:29.410
+nano, finds six, and a large
+one, YOLO26, finds twenty-two.
+
+8
+00:00:29.590 --> 00:00:33.579
+The price is time: about three
+milliseconds a frame, then five, then
+
+9
+00:00:33.579 --> 00:00:37.510
+seventy-five, plus a gigabyte of
+graphics memory for the large one.
+
+10
+00:00:37.690 --> 00:00:41.330
+More boxes doesn't mean more correct,
+so I'm not picking a winner.
+
+11
+00:00:41.510 --> 00:00:46.761
+And models keep improving: by its makers'
+own numbers, the newest small YOLO is
+
+12
+00:00:46.761 --> 00:00:50.550
+about thirty percent faster
+on a CPU than the one before.
+
+13
+00:00:50.730 --> 00:00:55.158
+So I built the app to let you choose the
+trade-off today, and plug in a faster
+
+14
+00:00:55.158 --> 00:00:56.010
+model tomorrow.
+
+15
+00:00:56.670 --> 00:01:01.707
+The model runs through ONNX Runtime
+inside the app, with no Python and no
+
+16
+00:01:01.707 --> 00:01:02.190
+server.
+
+17
+00:01:02.370 --> 00:01:07.173
+The DirectML provider hands the work to
+any DirectX 12 graphics card, not just
+
+18
+00:01:07.173 --> 00:01:11.852
+NVIDIA, and if the GPU can't load a
+model, the app falls back to the CPU and
+
+19
+00:01:11.852 --> 00:01:13.330
+shows which one it used.
+
+20
+00:01:14.090 --> 00:01:19.008
+To find the faces in the same 1080p
+frame, the CPU needs twenty-three
+
+21
+00:01:19.008 --> 00:01:24.497
+milliseconds, the laptop's built-in
+Intel graphics fourteen, and the RTX less
+
+22
+00:01:24.497 --> 00:01:25.210
+than five.
+
+23
+00:01:25.390 --> 00:01:29.540
+But at 4K there's a new limit: before
+the AI can look at a frame, the decoder
+
+24
+00:01:29.540 --> 00:01:33.744
+has to pull it out of the compressed
+video, and that takes thirteen to sixteen
+
+25
+00:01:33.744 --> 00:01:36.870
+milliseconds, longer than the
+GPU needs to find the faces.
+
+26
+00:01:37.050 --> 00:01:40.730
+So the decoder is now the
+bottleneck, and it sets the pace.
+
+27
+00:01:41.540 --> 00:01:43.900
+Two more tricks make the scan fast.
+
+28
+00:01:44.080 --> 00:01:48.771
+First, before the model can look at a
+frame, the app copies it into the model's
+
+29
+00:01:48.771 --> 00:01:53.046
+input: a square grid of numbers, 640
+on each side, that takes about five
+
+30
+00:01:53.046 --> 00:01:53.640
+megabytes.
+
+31
+00:01:53.820 --> 00:01:57.863
+Making a new buffer for every frame
+kept filling the memory, so the garbage
+
+32
+00:01:57.863 --> 00:02:02.175
+collector had to stop the whole app
+ninety-nine times in three hundred frames to
+
+33
+00:02:02.175 --> 00:02:02.660
+clean up.
+
+34
+00:02:02.840 --> 00:02:07.960
+Now the app reuses one buffer for
+every frame, and those pauses are gone.
+
+35
+00:02:08.140 --> 00:02:12.661
+Second, scanning every frame is wasted
+work, because at sixty frames a second
+
+36
+00:02:12.661 --> 00:02:15.420
+very little changes from
+one frame to the next.
+
+37
+00:02:15.600 --> 00:02:19.947
+So the app scans five frames a second:
+frame zero, twelve, twenty-four,
+
+38
+00:02:19.947 --> 00:02:23.560
+thirty-six and forty-eight,
+and skips the other fifty-five.
+
+39
+00:02:23.740 --> 00:02:27.497
+With the large model at about seventy-five
+milliseconds per frame, scanning all
+
+40
+00:02:27.497 --> 00:02:30.968
+sixty would take four and a half
+seconds for every second of video, while
+
+41
+00:02:30.968 --> 00:02:33.060
+scanning five takes less
+than half a second.
+
+42
+00:02:33.240 --> 00:02:37.492
+Those other frames still have to be
+decoded, because a video stores most frames
+
+43
+00:02:37.492 --> 00:02:41.743
+as changes from the ones before, but
+OpenCV never turns them into color pixels,
+
+44
+00:02:41.743 --> 00:02:45.080
+and that alone made reading the
+video more than twice as fast.
+
+45
+00:02:45.260 --> 00:02:49.460
+The catch is that boxes now
+exist only on the scanned frames.
+
+46
+00:02:49.640 --> 00:02:51.560
+So what happens to a face in between?
+
+47
+00:02:52.350 --> 00:02:56.769
+If the box just stays where the last scan
+saw it, a moving face walks right out
+
+48
+00:02:56.769 --> 00:02:58.950
+of its blur, and that's a privacy leak.
+
+49
+00:02:59.130 --> 00:03:04.202
+The fix is to interpolate: slide each box
+toward where the same face shows up at
+
+50
+00:03:04.202 --> 00:03:05.090
+the next scan.
+
+51
+00:03:05.270 --> 00:03:10.445
+But that only works if the app knows
+which box on the next scan is the same
+
+52
+00:03:10.445 --> 00:03:10.790
+face.
+
+53
+00:03:11.560 --> 00:03:13.120
+That's the tracker's job.
+
+54
+00:03:13.300 --> 00:03:18.479
+It predicts where each face is heading
+with a constant-velocity model, and joins
+
+55
+00:03:18.479 --> 00:03:21.780
+each new box to the track
+it overlaps most, by IoU.
+
+56
+00:03:21.960 --> 00:03:26.863
+When a small face moves too fast to
+overlap, a size-gated distance match still
+
+57
+00:03:26.863 --> 00:03:29.880
+joins it, if it's close
+and about the same size.
+
+58
+00:03:30.060 --> 00:03:34.375
+On one minute of footage, that cut the
+number of tracks by more than two thirds,
+
+59
+00:03:34.375 --> 00:03:38.420
+and with interpolation, boxes visibly
+off the face became four times rarer.
+
+60
+00:03:39.160 --> 00:03:43.453
+But a track ends whenever someone leaves
+the screen, so even a short film gives
+
+61
+00:03:43.453 --> 00:03:47.420
+you over a hundred of them, and nobody
+wants to review a hundred separate
+
+62
+00:03:47.420 --> 00:03:47.800
+tracks.
+
+63
+00:03:47.980 --> 00:03:51.420
+So for each track, the app
+picks three good shots.
+
+64
+00:03:51.600 --> 00:03:56.265
+YuNet finds five landmarks, the eyes, the
+nose and the corners of the mouth, the
+
+65
+00:03:56.265 --> 00:04:00.639
+face is aligned, and ArcFace turns it
+into an embedding of five hundred and
+
+66
+00:04:00.639 --> 00:04:02.680
+twelve numbers, like a fingerprint.
+
+67
+00:04:02.860 --> 00:04:07.096
+Then tracks with similar fingerprints
+are grouped into one suggested person,
+
+68
+00:04:07.096 --> 00:04:11.220
+with one hard rule: two faces on the
+same frame are never the same person.
+
+69
+00:04:11.400 --> 00:04:15.120
+On this film, a hundred and three
+tracks became thirty-five people.
+
+70
+00:04:15.880 --> 00:04:17.840
+Now naming is fast.
+
+71
+00:04:18.020 --> 00:04:22.448
+I name Thom and Celia once, and as the
+film plays, Celia leaves the screen and
+
+72
+00:04:22.448 --> 00:04:26.932
+comes back in a new scene already labeled
+Celia, because the app knows it's the
+
+73
+00:04:26.932 --> 00:04:27.500
+same face.
+
+74
+00:04:27.680 --> 00:04:32.509
+Grouping can still miss, like this shot
+of Thom in profile, so I merge it into
+
+75
+00:04:32.509 --> 00:04:35.480
+Thom with one click, and
+any edit can be undone.
+
+76
+00:04:35.660 --> 00:04:39.809
+And because a face fingerprint is
+biometric data, grouping only runs if you
+
+77
+00:04:39.809 --> 00:04:43.460
+allow it, and the fingerprints stay
+in memory and are never saved.
+
+78
+00:04:44.210 --> 00:04:48.813
+So the AI finds the faces, the tracker
+follows them, and grouping turns them
+
+79
+00:04:48.813 --> 00:04:50.690
+into people, all on the laptop.
+
+80
+00:04:50.870 --> 00:04:55.121
+But a model can still miss a face, and
+that's where the human comes in, in the
+
+81
+00:04:55.121 --> 00:04:55.830
+next episode.
+

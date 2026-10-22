@@ -1,0 +1,124 @@
+1
+00:00:00,250 --> 00:00:04,650
+My first version played this 4K video at
+just seven frames a second.
+
+2
+00:00:06,250 --> 00:00:07,598
+At sixty frames a second,
+
+3
+00:00:07,598 --> 00:00:09,432
+each frame has sixteen point seven
+
+4
+00:00:09,432 --> 00:00:11,913
+milliseconds to be decoded, blurred and
+shown,
+
+5
+00:00:11,913 --> 00:00:14,610
+and missing that slot makes the video fall
+behind.
+
+6
+00:00:18,250 --> 00:00:20,616
+On the WPF side, the trap was layout,
+
+7
+00:00:20,616 --> 00:00:25,669
+because my time readout and face boxes
+made WPF run a layout pass sixty times a
+
+8
+00:00:25,669 --> 00:00:29,890
+second, so now the moving parts change
+only pixels or a transform.
+
+9
+00:00:33,250 --> 00:00:36,530
+And in the app, layout passes now stay at
+zero.
+
+10
+00:00:37,250 --> 00:00:40,708
+Frames are shown on a clock, and each one
+has its own due time,
+
+11
+00:00:40,708 --> 00:00:45,210
+so when a frame would arrive late, it is
+skipped and the video stays in real time.
+
+12
+00:00:53,250 --> 00:00:58,042
+Decoding and blurring run on separate
+threads, joined by small bounded queues,
+
+13
+00:00:58,042 --> 00:01:02,650
+and when a queue is full the decoder
+simply waits, which keeps memory flat.
+
+14
+00:01:07,250 --> 00:01:10,546
+My first mistake was dropping late frames
+only at the screen,
+
+15
+00:01:10,546 --> 00:01:14,976
+after they had already been decoded and
+blurred, so all that work was thrown away.
+
+16
+00:01:14,976 --> 00:01:18,974
+The fix was to decide earlier and skip a
+frame before touching its pixels,
+
+17
+00:01:18,974 --> 00:01:22,810
+and that alone took 4K60 from seven to
+over thirty-two frames a second.
+
+18
+00:01:31,250 --> 00:01:34,969
+Running decode and blur on two threads
+brought it to about fifty,
+
+19
+00:01:34,969 --> 00:01:38,745
+and capping OpenCV's thread pool at four
+threads took it to sixty,
+
+20
+00:01:38,745 --> 00:01:40,290
+with no late frames at all.
+
+21
+00:01:44,250 --> 00:01:48,261
+This is the real pipeline, with three
+tasks, two bounded channels,
+
+22
+00:01:48,261 --> 00:01:50,570
+and a single mailbox to the UI thread.
+
+23
+00:01:53,250 --> 00:01:57,530
+And here it is at 4K60 with the blur on,
+running at sixty frames a second.
+
+24
+00:02:00,850 --> 00:02:04,527
+The trade-off is that the preview can skip
+a frame that would be late,
+
+25
+00:02:04,527 --> 00:02:06,050
+while export never drops one.
+
+26
+00:02:09,850 --> 00:02:14,250
+Next, I'll show how YouTube-style timeline
+previews work in WPF.
+

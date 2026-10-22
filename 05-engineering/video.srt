@@ -1,0 +1,523 @@
+1
+00:00:00,143 --> 00:00:04,583
+This 4K video keeps playing at its full
+thirty frames a second while the AI
+
+2
+00:00:04,583 --> 00:00:08,905
+scans it and an export writes a blurred
+copy, all at once, in one C# app.
+
+3
+00:00:09,333 --> 00:00:13,440
+This last episode is the engineering
+behind it: the system design, the
+
+4
+00:00:13,440 --> 00:00:17,371
+technologies, and the design patterns
+that solve its real problems.
+
+5
+00:00:18,657 --> 00:00:23,170
+There's one UI thread, and it never
+decodes or blurs: it takes the input and
+
+6
+00:00:23,170 --> 00:00:25,248
+puts each finished frame on screen.
+
+7
+00:00:25,676 --> 00:00:30,211
+Playback, the scan and the export are
+three pipelines with their own decoders
+
+8
+00:00:30,211 --> 00:00:33,981
+and background tasks, and the
+timeline previews run beside them.
+
+9
+00:00:35,124 --> 00:00:39,786
+Producer–consumer with backpressure solves
+a common problem: one part makes work
+
+10
+00:00:39,786 --> 00:00:41,943
+faster than the next part can use it.
+
+11
+00:00:42,467 --> 00:00:46,764
+In our scan, the AI is often the slow
+part, like the large model you just saw,
+
+12
+00:00:46,764 --> 00:00:49,133
+and each 4K frame is
+twenty-five megabytes.
+
+13
+00:00:49,657 --> 00:00:54,777
+So a queue of four frames sits between
+them, and when it's full, the decoder
+
+14
+00:00:54,777 --> 00:00:55,181
+waits.
+
+15
+00:00:56,229 --> 00:01:00,273
+That's what keeps memory bounded: each
+pipeline holds at most nine, six or
+
+16
+00:01:00,273 --> 00:01:04,209
+eleven frames, so a two-hour video
+holds no more frames in memory than a
+
+17
+00:01:04,209 --> 00:01:05,029
+ten-second one.
+
+18
+00:01:07,124 --> 00:01:11,670
+Playback has seventeen milliseconds per
+frame at sixty frames a second, and just
+
+19
+00:01:11,670 --> 00:01:13,943
+decoding a 4K frame takes about fifteen.
+
+20
+00:01:14,371 --> 00:01:18,444
+So it runs on a clock, and a frame that
+will be late anyway is skipped before
+
+21
+00:01:18,444 --> 00:01:19,819
+it's converted or blurred.
+
+22
+00:01:20,248 --> 00:01:25,308
+Everything that moves changes only pixels,
+a transform or a retained drawing, so
+
+23
+00:01:25,308 --> 00:01:27,143
+WPF never runs a layout pass.
+
+24
+00:01:27,571 --> 00:01:32,333
+Measured, 4K60 plays at sixty frames
+a second, with zero layout passes.
+
+25
+00:01:33,476 --> 00:01:37,921
+A one-slot mailbox solves the problem of
+requests arriving faster than you can
+
+26
+00:01:37,921 --> 00:01:40,486
+serve them, when only
+the newest one matters.
+
+27
+00:01:41,010 --> 00:01:45,068
+Dragging the playhead fires a burst of
+seeks, and if each one were served in
+
+28
+00:01:45,068 --> 00:01:47,524
+turn, the picture would
+fall behind the mouse.
+
+29
+00:01:48,048 --> 00:01:52,696
+So a seek only writes its target into
+one slot, each new one replaces the last,
+
+30
+00:01:52,696 --> 00:01:55,286
+and the decoder goes
+straight to the newest.
+
+31
+00:01:57,267 --> 00:02:01,596
+Hovering over the timeline should show
+a thumbnail at once, but on a 4K clip,
+
+32
+00:02:01,596 --> 00:02:04,238
+one seek and one read
+take about half a second.
+
+33
+00:02:04,667 --> 00:02:08,699
+So a background job with its own decoder
+builds up to two hundred and forty
+
+34
+00:02:08,699 --> 00:02:12,947
+thumbnails ahead of time, and on hover,
+the UI thread just looks up the nearest
+
+35
+00:02:12,947 --> 00:02:14,076
+one, in microseconds.
+
+36
+00:02:15,219 --> 00:02:19,196
+Debouncing solves the problem of events
+arriving far faster than you can act on
+
+37
+00:02:19,196 --> 00:02:19,448
+them.
+
+38
+00:02:19,971 --> 00:02:24,415
+Moving the mouse asks for a new frame
+many times a second, and each exact frame
+
+39
+00:02:24,415 --> 00:02:25,990
+takes half a second to read.
+
+40
+00:02:26,514 --> 00:02:30,680
+So the app waits until the pointer
+rests for a hundred milliseconds, then a
+
+41
+00:02:30,680 --> 00:02:34,902
+second reader fetches the exact frame,
+and a newer request cancels the older
+
+42
+00:02:34,902 --> 00:02:35,124
+one.
+
+43
+00:02:36,171 --> 00:02:40,446
+And the job publishes each new thumbnail
+as a fresh copy of the storyboard, so
+
+44
+00:02:40,446 --> 00:02:42,419
+the UI thread reads it with no lock.
+
+45
+00:02:44,495 --> 00:02:48,964
+The scan looks at five frames a second,
+skips the rest without converting their
+
+46
+00:02:48,964 --> 00:02:51,962
+pixels, and on the RTX, the
+AI waits for the decoder.
+
+47
+00:02:53,105 --> 00:02:57,378
+The Strategy pattern solves the problem
+of several ways to do one job, chosen
+
+48
+00:02:57,378 --> 00:02:59,543
+without changing the code that uses it.
+
+49
+00:03:00,067 --> 00:03:05,366
+Our scan only knows IObjectDetector,
+but each model family answers in its own
+
+50
+00:03:05,366 --> 00:03:10,733
+format: YOLO26's boxes, read the old way,
+would have been junk, with no error.
+
+51
+00:03:11,257 --> 00:03:15,629
+So each family gets a profile that checks
+and reads its output, and the scan
+
+52
+00:03:15,629 --> 00:03:19,943
+never changes. The blur, pixelate and
+black-box effects are strategies too.
+
+53
+00:03:21,324 --> 00:03:25,520
+A decorator solves the problem of
+adding a step to some objects, without
+
+54
+00:03:25,520 --> 00:03:27,152
+touching them or the others.
+
+55
+00:03:27,676 --> 00:03:32,338
+Classic models report several boxes per
+face and need non-maximum suppression,
+
+56
+00:03:32,338 --> 00:03:36,760
+but YOLO26 removes its own, and a second
+pass could drop one of two people
+
+57
+00:03:36,760 --> 00:03:37,238
+hugging.
+
+58
+00:03:37,762 --> 00:03:42,067
+So NMS is a decorator, wrapped around
+just the decoders that need it.
+
+59
+00:03:43,114 --> 00:03:47,670
+If you choose two models, a composite
+runs both on every frame, and still looks
+
+60
+00:03:47,670 --> 00:03:49,400
+like one detector to the scan.
+
+61
+00:03:49,924 --> 00:03:54,174
+And the detection list hears about new
+boxes through events, applied in batches
+
+62
+00:03:54,174 --> 00:03:57,886
+four times a second, so thousands
+of boxes don't flood the UI thread.
+
+63
+00:03:59,924 --> 00:04:04,514
+The export can't skip anything, so three
+stages run at once, with queues between
+
+64
+00:04:04,514 --> 00:04:08,875
+them that wait, and with FFmpeg encoding,
+it got about three times faster at
+
+65
+00:04:08,875 --> 00:04:09,219
+1080p.
+
+66
+00:04:10,362 --> 00:04:14,983
+A pure function solves the problem of
+two places that must always agree: same
+
+67
+00:04:14,983 --> 00:04:17,143
+input, same answer, no hidden state.
+
+68
+00:04:17,667 --> 00:04:22,416
+Our preview blur and our export must
+blur exactly the same faces, or what you
+
+69
+00:04:22,416 --> 00:04:24,143
+reviewed isn't what you get.
+
+70
+00:04:24,667 --> 00:04:29,118
+So both call one pure function,
+RedactionPlanner.Plan, which decides from the
+
+71
+00:04:29,118 --> 00:04:32,933
+boxes, the regions and the settings
+alone, so they can't disagree.
+
+72
+00:04:34,314 --> 00:04:38,869
+An immutable snapshot solves the problem
+of reading data that someone else keeps
+
+73
+00:04:38,869 --> 00:04:39,381
+changing.
+
+74
+00:04:39,905 --> 00:04:43,658
+The reviewer keeps working during an
+export, and a file that's half the old
+
+75
+00:04:43,658 --> 00:04:45,810
+review and half the
+new one would be wrong.
+
+76
+00:04:46,333 --> 00:04:50,333
+So pressing Export freezes a snapshot,
+and the file matches that moment.
+
+77
+00:04:51,000 --> 00:04:55,016
+Undo in People works the same way: each
+edit makes a new index, and undo just
+
+78
+00:04:55,016 --> 00:04:57,781
+keeps the old one, with no
+reverse code to get wrong.
+
+79
+00:04:59,857 --> 00:05:04,029
+Ports and adapters solve the problem
+of logic tied to one library, where
+
+80
+00:05:04,029 --> 00:05:06,752
+changing the library
+means changing everything.
+
+81
+00:05:07,276 --> 00:05:12,873
+This app uses OpenCV, ONNX Runtime,
+FFmpeg and WPF, and any of them could
+
+82
+00:05:12,873 --> 00:05:13,410
+change.
+
+83
+00:05:13,933 --> 00:05:18,359
+So the core declares the interfaces it
+needs, small adapters implement them, and
+
+84
+00:05:18,359 --> 00:05:20,295
+one composition root wires them in.
+
+85
+00:05:20,819 --> 00:05:25,881
+That's how FFmpeg replaced OpenCV's
+writer: one new adapter, one registration,
+
+86
+00:05:25,881 --> 00:05:31,009
+one new method on the port, and a test
+on every push keeps libraries out of the
+
+87
+00:05:31,009 --> 00:05:31,333
+core.
+
+88
+00:05:32,714 --> 00:05:37,192
+The Template Method writes the steps of
+a job once, in a base class, and leaves
+
+89
+00:05:37,192 --> 00:05:39,800
+one step open for each
+kind of job to fill in.
+
+90
+00:05:40,324 --> 00:05:45,217
+We have five background jobs, the scan,
+the export, region tracking, people and
+
+91
+00:05:45,217 --> 00:05:49,924
+the storyboard, and each needs start,
+progress, cancel and failure handling.
+
+92
+00:05:50,448 --> 00:05:55,073
+So ProcessingJob runs the same steps
+for every job, start, the work, then
+
+93
+00:05:55,073 --> 00:05:59,889
+completed, failed or cancelled, with a
+state machine guarding each step, and
+
+94
+00:05:59,889 --> 00:06:03,057
+each job only fills in
+ExecuteAsync, its own work.
+
+95
+00:06:04,438 --> 00:06:08,366
+A factory with a fallback solves the
+problem of creating the best object a
+
+96
+00:06:08,366 --> 00:06:10,914
+machine supports, without
+failing when it can't.
+
+97
+00:06:11,438 --> 00:06:16,733
+On a real PC, the GPU might not load
+a model, or FFmpeg might be missing.
+
+98
+00:06:17,257 --> 00:06:22,936
+So a factory tries the best option first
+and falls back, GPU to CPU, FFmpeg to
+
+99
+00:06:22,936 --> 00:06:26,286
+OpenCV's writer, and the
+work still gets done.
+
+100
+00:06:27,600 --> 00:06:32,816
+Today, only the face detection runs on
+the GPU, while decoding, the blur and the
+
+101
+00:06:32,816 --> 00:06:34,381
+encoding run on the CPU.
+
+102
+00:06:35,524 --> 00:06:39,066
+I tried the blur on the laptop's
+Intel GPU, and it was slower, fourteen
+
+103
+00:06:39,066 --> 00:06:43,008
+milliseconds a frame against eight,
+because every face box was copied there and
+
+104
+00:06:43,008 --> 00:06:43,257
+back.
+
+105
+00:06:44,590 --> 00:06:49,095
+So the next step is the whole pipeline
+on the GPU: decode, scan, blur and
+
+106
+00:06:49,095 --> 00:06:53,352
+encode, with no copies back and
+forth and no extra color conversions.
+
+107
+00:06:53,781 --> 00:06:57,286
+That should be much faster, but I
+haven't built or measured it yet.
+
+108
+00:06:58,143 --> 00:07:02,192
+Here's the whole design on one map, with
+each pattern placed where it solved a
+
+109
+00:07:02,192 --> 00:07:02,867
+real problem.
+
+110
+00:07:03,438 --> 00:07:05,152
+Thanks for following the series.
+
